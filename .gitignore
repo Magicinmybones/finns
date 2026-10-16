@@ -1,0 +1,24 @@
+# Local tooling and generated output
+node_modules/
+.wrangler/
+.tmp/
+tmp/
+dist/
+build/
+coverage/
+
+# Local settings and secrets
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.local
+
+# Editor, OS, and logs
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
+npm-debug.log*
