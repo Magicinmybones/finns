@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#050718">
 <title>Finns — Take Control for your Finances</title>
+<script>
+if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: no-preference)').matches && Element.prototype.animate) {
+  document.documentElement.classList.add('entrance-pending');
+  window.__finnsEntranceFallback = setTimeout(function () {
+    document.documentElement.classList.remove('entrance-pending');
+  }, 4000);
+}
+</script>
 <style>
 @font-face{font-family:"Finns Display";font-weight:300;font-style:normal;font-display:block;src:url(assets/finns-display-300.woff2) format("woff2")}
 @font-face{font-family:"Finns Display";font-weight:400;font-style:normal;font-display:block;src:url(assets/finns-display-400.woff2) format("woff2")}
@@ -286,6 +294,18 @@ button{background:none;border:0;padding:0;cursor:pointer}
   .cta .go{transition:transform .25s ease}
   .cta:hover .go{transform:translateX(3px)}
 }
+/* The first frame is prepared before the page paints; the script clears it after staging motion. */
+html.entrance-pending .brand,
+html.entrance-pending .menu,
+html.entrance-pending .lang,
+html.entrance-pending .btn-start,
+html.entrance-pending .burger,
+html.entrance-pending .h1 .l1,
+html.entrance-pending .h1 .l2,
+html.entrance-pending .sub,
+html.entrance-pending .cta,
+html.entrance-pending .frame,
+html.entrance-pending .dash .card{opacity:0}
 .cta:focus-visible,.btn-start:focus-visible,.menu a:focus-visible,.burger:focus-visible{outline:2px solid #f4b6f6;outline-offset:3px}
 </style>
 </head>
@@ -513,7 +533,56 @@ document.getElementById('burger').addEventListener('click',function(){
 });
 document.getElementById('menu').addEventListener('click',function(e){if(e.target.tagName==='A'){var nav=document.getElementById('nav');nav.classList.remove('open');document.getElementById('burger').setAttribute('aria-expanded','false');}});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){document.getElementById('nav').classList.remove('open');document.getElementById('burger').setAttribute('aria-expanded','false');}});
-(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(layout);
+ /* One coordinated entrance. Only opening-viewport elements take part. */
+ function runEntrance(){
+   if(!root.classList.contains('entrance-pending'))return;
+   clearTimeout(window.__finnsEntranceFallback);
+   if(document.hidden || !window.matchMedia('(prefers-reduced-motion: no-preference)').matches){
+     root.classList.remove('entrance-pending');
+     return;
+   }
+   var motion=[],ease='cubic-bezier(.22,1,.36,1)';
+   function visible(el){
+     if(!el || getComputedStyle(el).display==='none')return false;
+     var r=el.getBoundingClientRect();
+     return r.width>0 && r.height>0 && r.bottom>0 && r.top<window.innerHeight;
+   }
+   function enter(selector,from,to,delay,duration){
+     var el=document.querySelector(selector);
+     if(!visible(el))return;
+     motion.push(el.animate([from,to],{delay:delay,duration:duration,easing:ease,fill:'backwards'}));
+   }
+   var settle={opacity:1,transform:'none'};
+   enter('.brand',{opacity:0,transform:'translateY(6px)'},settle,60,520);
+   enter('.menu',{opacity:0,transform:'translateY(6px)'},settle,140,560);
+   enter('.lang',{opacity:0,transform:'translateY(6px)'},settle,210,480);
+   enter('.btn-start',{opacity:0,transform:'translateY(6px)'},settle,250,500);
+   enter('.burger',{opacity:0,transform:'translateY(6px)'},settle,200,480);
+   var typeEnd={opacity:1,clipPath:'inset(0 0 0 0)',transform:'none'};
+   enter('.h1 .l1',{opacity:0,clipPath:'inset(100% 0 0 0)',transform:'translateY(10px)'},typeEnd,330,820);
+   enter('.h1 .l2',{opacity:0,clipPath:'inset(100% 0 0 0)',transform:'translateY(10px)'},typeEnd,450,870);
+   enter('.sub',{opacity:0,transform:'translateY(8px)'},settle,820,680);
+   enter('.cta',{opacity:0},{opacity:1},1040,600);
+   var ghostFrom={opacity:0,transform:'translateY(8px)'};
+   enter('.c-upd',ghostFrom,settle,980,680);
+   enter('.c-rmid',ghostFrom,settle,1040,680);
+   enter('.c-emr',ghostFrom,settle,1090,680);
+   enter('.frame',{opacity:0,clipPath:'inset(10% 0 0 0 round 30px)'},
+     {opacity:1,clipPath:'inset(0 0 0 0 round 30px)'},1080,900);
+   var cardFrom={opacity:0,transform:'translateY(12px)'};
+   enter('.c-exp',cardFrom,settle,1300,730);
+   enter('.c-ast',cardFrom,settle,1360,730);
+   enter('.c-sav',cardFrom,settle,1450,700);
+   enter('.c-gol',cardFrom,settle,1490,700);
+   enter('.c-trn',cardFrom,settle,1530,700);
+   root.classList.remove('entrance-pending');
+   root.dataset.entrance='running';
+   Promise.all(motion.map(function(a){return a.finished.catch(function(){});})).then(function(){
+     motion.forEach(function(a){a.cancel();});
+     root.dataset.entrance='complete';
+   });
+ }
+ (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(function(){layout();runEntrance();});
 layout();
 })();
 </script>
